@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>กาดหวยโมฬี — ยอดเงินคงเหลือ</title>
+<style>
+  :root{
+    --primary:#7c3aed;
+    --primary-dark:#5b21b6;
+    --primary-light:#f0e9fe;
+    --danger:#dc3545;
+    --danger-light:#fdecec;
+    --warning:#fd7e14;
+    --warning-light:#fff4e5;
+    --success:#198754;
+    --success-light:#e8f6ee;
+    --bg:#f5f0fd;
+    --card:#ffffff;
+    --text:#221b2e;
+    --muted:#71698a;
+    --border:#e4d9f7;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Segoe UI',Tahoma,'Noto Sans Thai',sans-serif;
+    background:var(--bg);color:var(--text);padding-bottom:76px;-webkit-tap-highlight-color:transparent;
+  }
+  .app{max-width:560px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;}
+
+  header.topbar{
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+    color:#fff;padding:14px 16px 18px;border-radius:0 0 20px 20px;
+    box-shadow:0 4px 14px rgba(124,58,237,.28);position:sticky;top:0;z-index:20;
+  }
+  .topbar-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .shop-name{font-size:14px;font-weight:700;opacity:.95;}
+  .identity-chip{
+    background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;
+    font-size:12.5px;padding:6px 10px;border-radius:999px;display:flex;align-items:center;gap:6px;
+    cursor:pointer;white-space:nowrap;
+  }
+  .header-total{margin-top:10px;}
+  .header-total .label{font-size:12.5px;opacity:.85;}
+  .header-total .amount{font-size:30px;font-weight:800;line-height:1.25;}
+  .header-total .sub{font-size:12.5px;opacity:.9;margin-top:4px;display:flex;justify-content:space-between;}
+  .refresh-btn{
+    background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;
+    border-radius:10px;padding:7px 10px;font-size:13px;display:flex;align-items:center;gap:6px;
+  }
+  .spin{animation:spin 1s linear infinite;display:inline-block;}
+  @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+  main{padding:14px 14px 24px;}
+  .tab-section{display:none;}
+  .tab-section.active{display:block;}
+  .card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(90,30,150,.06);
+  }
+  .card h3{margin:0 0 10px;font-size:15px;color:var(--primary-dark);}
+  .card h3 .tag{font-size:11px;font-weight:700;color:var(--muted);background:#f2eefb;padding:3px 8px;border-radius:999px;margin-left:6px;}
+
+  label{display:block;font-size:13px;color:var(--muted);margin:10px 0 5px;font-weight:600;}
+  input[type=text],input[type=tel],input[type=number],input[type=date],select,textarea{
+    width:100%;padding:12px 12px;border:1.5px solid var(--border);border-radius:12px;
+    font-size:15px;background:#fbf9ff;color:var(--text);font-family:inherit;
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary);background:#fff;}
+  textarea{min-height:64px;resize:vertical;}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:12px;
+    padding:13px 16px;font-size:15px;font-weight:700;cursor:pointer;width:100%;margin-top:14px;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:disabled{opacity:.55;}
+  .btn-outline{background:#fff;border:1.5px solid var(--primary);color:var(--primary);}
+  .btn-danger{background:var(--danger-light);color:var(--danger);}
+  .btn-row{display:flex;gap:8px;}
+  .btn-row .btn{margin-top:0;}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px;}
+  .radio-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+  .pill-option{border:1.5px solid var(--border);border-radius:999px;padding:8px 14px;font-size:13.5px;cursor:pointer;background:#fff;color:var(--text);}
+  .pill-option.selected{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700;}
+  .pill-option.in.selected{background:var(--success);border-color:var(--success);}
+  .pill-option.out.selected{background:var(--danger);border-color:var(--danger);}
+
+  .list-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid var(--border);cursor:pointer;}
+  .list-item:last-child{border-bottom:none;}
+  .li-name{font-weight:700;font-size:14.5px;}
+  .li-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .li-amount{font-weight:800;font-size:15px;text-align:right;}
+  .li-amount.neg{color:var(--danger);}
+  .li-amount.pos{color:var(--success);}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;}
+  .badge-purple{background:var(--primary-light);color:var(--primary-dark);}
+  .badge-gray{background:#eef1f5;color:var(--muted);}
+  .badge-green{background:var(--success-light);color:var(--success);}
+  .badge-red{background:var(--danger-light);color:var(--danger);}
+  .empty-state{text-align:center;color:var(--muted);padding:26px 10px;font-size:13.5px;}
+
+  .tx-row{border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fbf9ff;}
+  .tx-row .row-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .row-actions{display:flex;gap:6px;margin-top:8px;}
+  .icon-btn{border:1px solid var(--border);background:#fff;border-radius:9px;padding:6px 10px;font-size:12.5px;cursor:pointer;color:var(--text);}
+  .icon-btn.danger{color:var(--danger);border-color:#f3c7cc;}
+
+  nav.bottomnav{
+    position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:flex;
+    z-index:30;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 10px rgba(90,30,150,.1);
+  }
+  nav.bottomnav .nav-item{flex:1;text-align:center;padding:9px 2px 8px;color:var(--muted);font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;}
+  nav.bottomnav .nav-item .ic{font-size:20px;line-height:1;}
+  nav.bottomnav .nav-item.active{color:var(--primary);}
+
+  .overlay{position:fixed;inset:0;background:var(--bg);z-index:50;display:none;overflow-y:auto;}
+  .overlay.active{display:block;}
+  .overlay-header{
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:14px 16px 16px;
+    position:sticky;top:0;z-index:5;border-radius:0 0 18px 18px;
+  }
+  .back-btn{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:10px;padding:7px 12px;font-size:14px;cursor:pointer;}
+  .overlay-body{padding:14px;}
+
+  .modal-backdrop{position:fixed;inset:0;background:rgba(30,10,50,.45);z-index:100;display:flex;align-items:flex-end;justify-content:center;}
+  .modal-backdrop.hidden{display:none;}
+  .modal-sheet{background:#fff;border-radius:20px 20px 0 0;padding:20px 18px 26px;width:100%;max-width:560px;animation:slideup .18s ease-out;}
+  @keyframes slideup{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .modal-sheet h2{margin:0 0 4px;font-size:17px;color:var(--primary-dark);}
+  .modal-sheet p{margin:0 0 12px;color:var(--muted);font-size:13.5px;}
+
+  #toast{
+    position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#2a2038;color:#fff;
+    padding:11px 18px;border-radius:12px;font-size:13.5px;opacity:0;pointer-events:none;transition:all .25s ease;
+    z-index:200;max-width:88%;text-align:center;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  #toast.error{background:#7a2330;}
+
+  .filter-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+  .filter-row select,.filter-row input{flex:1;}
+  .muted{color:var(--muted);}
+  .switch-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;}
+  .switch{position:relative;width:44px;height:26px;flex:none;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;background:#ccc;border-radius:999px;cursor:pointer;transition:.2s;}
+  .slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
+  .switch input:checked + .slider{background:var(--success);}
+  .switch input:checked + .slider:before{transform:translateX(18px);}
+  .section-divider{font-size:12.5px;font-weight:700;color:var(--muted);margin:14px 0 4px;text-transform:uppercase;letter-spacing:.3px;}
+  .arrow-sep{text-align:center;color:var(--primary);font-size:20px;margin:2px 0;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="topbar-row">
+      <div class="shop-name" id="shopNameLabel">กาดหวยโมฬี — ยอดเงินคงเหลือ</div>
+      <div class="identity-chip" id="identityChip">👤 <span id="identityLabel">เลือกตัวตน</span></div>
+    </div>
+    <div class="header-total">
+      <div class="label">ยอดรวมทั้งหมด (หมวด 1-6)</div>
+      <div class="amount" id="mainTotal">฿0</div>
+      <div class="sub"><span>ส่วนพิเศษ (แยกต่างหาก 7-8): <b id="separateTotal">฿0</b></span></div>
+    </div>
+    <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+      <button class="refresh-btn" id="refreshBtn"><span id="refreshIcon">⟳</span> รีเฟรช</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- TAB 1: ภาพรวม -->
+    <section class="tab-section active" data-tab="overview">
+      <div class="card">
+        <h3>หมวดเงินหลัก (รวมยอด 1-6)</h3>
+        <div id="mainFundsList"><div class="empty-state">กำลังโหลดข้อมูล...</div></div>
+      </div>
+      <div class="card">
+        <h3>ส่วนพิเศษ <span class="tag">ไม่รวมยอด</span></h3>
+        <div id="separateFundsList"><div class="empty-state">กำลังโหลดข้อมูล...</div></div>
+      </div>
+      <div class="card">
+        <h3>รายการล่าสุด</h3>
+        <div id="recentList"><div class="empty-state">ยังไม่มีรายการ</div></div>
+      </div>
+    </section>
+
+    <!-- TAB 2: บันทึกรายการ -->
+    <section class="tab-section" data-tab="newTx">
+      <div class="card">
+        <h3>บันทึกรับเข้า / จ่ายออก</h3>
+        <label>หมวดเงิน *</label>
+        <select id="txFundSelect"><option value="">-- เลือกหมวดเงิน --</option></select>
+        <label>ประเภทรายการ *</label>
+        <div class="radio-pills" id="txDirectionPills">
+          <div class="pill-option in" data-dir="IN">รับเข้า (+)</div>
+          <div class="pill-option out" data-dir="OUT">จ่ายออก (-)</div>
+        </div>
+        <label>ยอดเงิน (บาท) *</label>
+        <input type="number" id="txAmount" min="0" step="0.01" inputmode="decimal">
+        <label>วันที่ *</label>
+        <input type="date" id="txDate">
+        <label>หมายเหตุ</label>
+        <textarea id="txNotes" placeholder="เช่น ถอนไปจ่ายรางวัล, รับเงินจากลูกค้า ฯลฯ"></textarea>
+        <button class="btn btn-primary" id="submitTxBtn">บันทึกรายการ</button>
+      </div>
+    </section>
+
+    <!-- TAB 3: โอนเงิน -->
+    <section class="tab-section" data-tab="transfer">
+      <div class="card">
+        <h3>โอนเงินระหว่างหมวด</h3>
+        <label>จากหมวด (ต้นทาง) *</label>
+        <select id="transferFromSelect"><option value="">-- เลือกหมวดต้นทาง --</option></select>
+        <div class="arrow-sep">↓</div>
+        <label>ไปหมวด (ปลายทาง) *</label>
+        <select id="transferToSelect"><option value="">-- เลือกหมวดปลายทาง --</option></select>
+        <label>ยอดเงิน (บาท) *</label>
+        <input type="number" id="transferAmount" min="0" step="0.01" inputmode="decimal">
+        <label>วันที่ *</label>
+        <input type="date" id="transferDate">
+        <label>หมายเหตุ</label>
+        <textarea id="transferNotes"></textarea>
+        <div class="hint">ระบบจะตัดยอดออกจากต้นทางและเพิ่มเข้าปลายทางให้พร้อมกันในคลิกเดียว</div>
+        <button class="btn btn-primary" id="submitTransferBtn">โอนเงิน</button>
+      </div>
+    </section>
+
+    <!-- TAB 4: หมวดเงิน -->
+    <section class="tab-section" data-tab="manageFunds">
+      <div class="card">
+        <button class="btn btn-outline" id="openAddFundBtn">+ เพิ่มหมวดเงินใหม่</button>
+        <div id="addFundForm" style="display:none;margin-top:10px;">
+          <label>ชื่อหมวดเงิน *</label>
+          <input type="text" id="newFundName">
+          <label>กลุ่ม *</label>
+          <div class="radio-pills" id="newFundGroupPills">
+            <div class="pill-option" data-group="main">รวมยอด (1-6)</div>
+            <div class="pill-option" data-group="separate">แยกต่างหาก (7-8)</div>
+          </div>
+          <div class="btn-row" style="margin-top:14px;">
+            <button class="btn btn-outline" id="cancelAddFundBtn">ยกเลิก</button>
+            <button class="btn btn-primary" id="saveNewFundBtn">บันทึกหมวดเงิน</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>หมวดเงินทั้งหมด</h3>
+        <div id="manageFundsList"><div class="empty-state">กำลังโหลดข้อมูล...</div></div>
+      </div>
+    </section>
+
+    <!-- TAB 5: ประวัติ -->
+    <section class="tab-section" data-tab="audit">
+      <div class="card">
+        <h3>ประวัติการทำรายการทั้งหมด</h3>
+        <div class="filter-row">
+          <select id="auditActorFilter"><option value="">ทุกคน</option></select>
+          <input type="date" id="auditDateFrom">
+          <input type="date" id="auditDateTo">
+        </div>
+        <button class="btn btn-outline btn-sm" id="applyAuditFilterBtn" style="width:auto;padding:8px 12px;margin-top:0;">กรอง</button>
+        <div id="auditList" style="margin-top:12px;"><div class="empty-state">กำลังโหลดข้อมูล...</div></div>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="bottomnav">
+    <div class="nav-item active" data-tab="overview"><span class="ic">📊</span>ภาพรวม</div>
+    <div class="nav-item" data-tab="newTx"><span class="ic">➕</span>บันทึก</div>
+    <div class="nav-item" data-tab="transfer"><span class="ic">🔁</span>โอนเงิน</div>
+    <div class="nav-item" data-tab="manageFunds"><span class="ic">🗂️</span>หมวดเงิน</div>
+    <div class="nav-item" data-tab="audit"><span class="ic">🕘</span>ประวัติ</div>
+  </nav>
+
+  <!-- Fund detail overlay -->
+  <div class="overlay" id="fundOverlay">
+    <div class="overlay-header">
+      <button class="back-btn" id="closeOverlayBtn">‹ กลับ</button>
+      <div style="margin-top:10px;font-size:19px;font-weight:800;" id="overlayFundName">ชื่อหมวดเงิน</div>
+      <div style="margin-top:8px;font-size:26px;font-weight:800;" id="overlayFundBalance">฿0</div>
+    </div>
+    <div class="overlay-body" id="overlayBody"></div>
+  </div>
+
+  <!-- Identity picker modal -->
+  <div class="modal-backdrop hidden" id="identityModal">
+    <div class="modal-sheet">
+      <h2>คุณคือใคร?</h2>
+      <p>เลือกตัวตนของคุณ ระบบจะจำไว้ในเครื่องนี้ และแนบชื่อคุณไปกับทุกรายการที่บันทึกโดยอัตโนมัติ</p>
+      <div class="radio-pills" id="identityPills"></div>
+      <button class="btn btn-primary" id="confirmIdentityBtn" disabled>ยืนยัน</button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+</div>
+
+<script>
+const API_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+const POLL_INTERVAL_MS = 45000;
+const IDENTITY_KEY = 'molee_fund_identity_v1';
+const GROUP_MAIN = 'main';
+const GROUP_SEPARATE = 'separate';
+
+let state = {
+  identity: localStorage.getItem(IDENTITY_KEY) || '',
+  bootstrap: null,
+  overview: null,
+  currentTab: 'overview',
+  currentFundId: null,
+  currentFundDetail: null,
+  editingTxId: null,
+  pollTimer: null
+};
+
+function callApi(action, params) {
+  const fd = new FormData();
+  fd.append('action', action);
+  fd.append('params', JSON.stringify(params || []));
+  return fetch(API_URL, { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(json => {
+      if (!json.ok) throw new Error(json.error || 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ');
+      return json.data;
+    });
+}
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = isError ? 'show error' : 'show';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = ''; }, 3200);
+}
+
+function money(n) {
+  n = Number(n) || 0;
+  return '฿' + n.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function isoToThaiDate(iso) {
+  const parts = iso.split('-');
+  if (parts.length !== 3) return iso;
+  return parts[2] + '/' + parts[1] + '/' + parts[0];
+}
+
+/* ---------------- Identity ---------------- */
+function ensureIdentity() {
+  document.getElementById('identityLabel').textContent = state.identity || 'เลือกตัวตน';
+  if (!state.identity) openIdentityModal();
+}
+
+function openIdentityModal() {
+  const wrap = document.getElementById('identityPills');
+  wrap.innerHTML = '';
+  const identities = (state.bootstrap && state.bootstrap.identities) || ['จ๋า', 'มิก', 'นี'];
+  let selected = state.identity;
+  identities.forEach(name => {
+    const el = document.createElement('div');
+    el.className = 'pill-option' + (name === selected ? ' selected' : '');
+    el.textContent = name;
+    el.onclick = () => {
+      selected = name;
+      wrap.querySelectorAll('.pill-option').forEach(p => p.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('confirmIdentityBtn').disabled = false;
+    };
+    wrap.appendChild(el);
+  });
+  document.getElementById('confirmIdentityBtn').disabled = !selected;
+  document.getElementById('confirmIdentityBtn').onclick = () => {
+    if (!selected) return;
+    state.identity = selected;
+    localStorage.setItem(IDENTITY_KEY, selected);
+    document.getElementById('identityLabel').textContent = selected;
+    document.getElementById('identityModal').classList.add('hidden');
+    showToast('ตั้งค่าตัวตนเรียบร้อย: ' + selected);
+  };
+  document.getElementById('identityModal').classList.remove('hidden');
+}
+
+function requireIdentityOrPrompt() {
+  if (!state.identity) { openIdentityModal(); showToast('กรุณาเลือกตัวตนก่อนบันทึกรายการ', true); return false; }
+  return true;
+}
+document.getElementById('identityChip').addEventListener('click', openIdentityModal);
+
+/* ---------------- Tabs ---------------- */
+function switchTab(tab) {
+  state.currentTab = tab;
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.toggle('active', s.dataset.tab === tab));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === tab));
+  closeOverlay();
+  refreshActiveView();
+}
+document.querySelectorAll('nav.bottomnav .nav-item').forEach(item => {
+  item.addEventListener('click', () => switchTab(item.dataset.tab));
+});
+
+function refreshActiveView() {
+  if (state.currentTab === 'overview') loadOverview();
+  else if (state.currentTab === 'manageFunds') renderManageFundsList();
+  else if (state.currentTab === 'audit') loadAuditLog();
+}
+
+/* ---------------- Overview ---------------- */
+function loadOverview() {
+  callApi('getOverview', []).then(data => {
+    state.overview = data;
+    renderOverview();
+  }).catch(err => showToast(err.message, true));
+}
+
+function renderOverview() {
+  const o = state.overview;
+  if (!o) return;
+  document.getElementById('mainTotal').textContent = money(o.mainTotal);
+  document.getElementById('separateTotal').textContent = money(o.separateTotal);
+
+  const mainFunds = o.funds.filter(f => f.groupTag === GROUP_MAIN);
+  const sepFunds = o.funds.filter(f => f.groupTag === GROUP_SEPARATE);
+
+  document.getElementById('mainFundsList').innerHTML = renderFundListHtml(mainFunds);
+  document.getElementById('separateFundsList').innerHTML = renderFundListHtml(sepFunds);
+
+  const recentWrap = document.getElementById('recentList');
+  if (!o.recent.length) {
+    recentWrap.innerHTML = '<div class="empty-state">ยังไม่มีรายการ</div>';
+  } else {
+    recentWrap.innerHTML = o.recent.map(t => `
+      <div class="tx-row">
+        <div class="row-top">
+          <div>
+            <div style="font-weight:700;">${escapeHtml(t.fundName)} ${t.isTransfer ? '<span class="badge badge-purple">โอนเงิน</span>' : ''}</div>
+            <div class="li-sub">${escapeHtml(t.txDate)} • บันทึกโดย ${escapeHtml(t.recordedBy)}</div>
+            ${t.notes ? `<div class="li-sub">${escapeHtml(t.notes)}</div>` : ''}
+          </div>
+          <div class="li-amount ${t.direction === 'IN' ? 'pos' : 'neg'}">${t.direction === 'IN' ? '+' : '-'}${money(t.amount)}</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function renderFundListHtml(funds) {
+  if (!funds.length) return '<div class="empty-state">ยังไม่มีหมวดเงิน</div>';
+  return funds.map(f => `
+    <div class="list-item" onclick="openFund('${f.fundId}')">
+      <div>
+        <div class="li-name">${escapeHtml(f.name)} ${f.active ? '' : '<span class="badge badge-gray">ปิดใช้งาน</span>'}</div>
+      </div>
+      <div class="li-amount ${f.balance < 0 ? 'neg' : ''}">${money(f.balance)}</div>
+    </div>`).join('');
+}
+
+/* ---------------- New transaction tab ---------------- */
+function populateFundSelects() {
+  const funds = (state.bootstrap && state.bootstrap.funds) || [];
+  const activeFunds = funds.filter(f => f.active);
+  const txSel = document.getElementById('txFundSelect');
+  const fromSel = document.getElementById('transferFromSelect');
+  const toSel = document.getElementById('transferToSelect');
+  const auditSel = document.getElementById('auditActorFilter');
+
+  const keepTx = txSel.value, keepFrom = fromSel.value, keepTo = toSel.value;
+  const opts = activeFunds.map(f => `<option value="${f.fundId}">${escapeHtml(f.name)}${f.groupTag === GROUP_SEPARATE ? ' (แยกต่างหาก)' : ''}</option>`).join('');
+  txSel.innerHTML = '<option value="">-- เลือกหมวดเงิน --</option>' + opts;
+  fromSel.innerHTML = '<option value="">-- เลือกหมวดต้นทาง --</option>' + opts;
+  toSel.innerHTML = '<option value="">-- เลือกหมวดปลายทาง --</option>' + opts;
+  if ([...txSel.options].some(o => o.value === keepTx)) txSel.value = keepTx;
+  if ([...fromSel.options].some(o => o.value === keepFrom)) fromSel.value = keepFrom;
+  if ([...toSel.options].some(o => o.value === keepTo)) toSel.value = keepTo;
+
+  if (state.bootstrap) {
+    const identities = state.bootstrap.identities || [];
+    const keepAudit = auditSel.value;
+    auditSel.innerHTML = '<option value="">ทุกคน</option>' + identities.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+    if ([...auditSel.options].some(o => o.value === keepAudit)) auditSel.value = keepAudit;
+  }
+}
+
+document.getElementById('txDirectionPills').addEventListener('click', e => {
+  const opt = e.target.closest('.pill-option');
+  if (!opt) return;
+  document.querySelectorAll('#txDirectionPills .pill-option').forEach(p => p.classList.remove('selected'));
+  opt.classList.add('selected');
+  document.getElementById('txDirectionPills').dataset.value = opt.dataset.dir;
+});
+
+document.getElementById('submitTxBtn').addEventListener('click', () => {
+  if (!requireIdentityOrPrompt()) return;
+  const fundId = document.getElementById('txFundSelect').value;
+  const direction = document.getElementById('txDirectionPills').dataset.value || '';
+  const amount = document.getElementById('txAmount').value;
+  const dateVal = document.getElementById('txDate').value;
+  const notes = document.getElementById('txNotes').value.trim();
+
+  if (!fundId) { showToast('กรุณาเลือกหมวดเงิน', true); return; }
+  if (!direction) { showToast('กรุณาเลือกว่ารับเข้าหรือจ่ายออก', true); return; }
+  if (!amount || Number(amount) <= 0) { showToast('กรุณากรอกยอดเงินให้ถูกต้อง', true); return; }
+  if (!dateVal) { showToast('กรุณาลงวันที่', true); return; }
+
+  setBtnLoading('submitTxBtn', true);
+  callApi('addTransaction', [fundId, direction, amount, isoToThaiDate(dateVal), notes, state.identity]).then(() => {
+    showToast('บันทึกรายการเรียบร้อย');
+    document.getElementById('txAmount').value = '';
+    document.getElementById('txNotes').value = '';
+    document.querySelectorAll('#txDirectionPills .pill-option').forEach(p => p.classList.remove('selected'));
+    document.getElementById('txDirectionPills').dataset.value = '';
+    if (state.currentTab === 'overview') loadOverview();
+  }).catch(err => showToast(err.message, true))
+    .finally(() => setBtnLoading('submitTxBtn', false));
+});
+
+/* ---------------- Transfer tab ---------------- */
+document.getElementById('submitTransferBtn').addEventListener('click', () => {
+  if (!requireIdentityOrPrompt()) return;
+  const fromFundId = document.getElementById('transferFromSelect').value;
+  const toFundId = document.getElementById('transferToSelect').value;
+  const amount = document.getElementById('transferAmount').value;
+  const dateVal = document.getElementById('transferDate').value;
+  const notes = document.getElementById('transferNotes').value.trim();
+
+  if (!fromFundId) { showToast('กรุณาเลือกหมวดต้นทาง', true); return; }
+  if (!toFundId) { showToast('กรุณาเลือกหมวดปลายทาง', true); return; }
+  if (fromFundId === toFundId) { showToast('หมวดต้นทางและปลายทางต้องไม่ใช่หมวดเดียวกัน', true); return; }
+  if (!amount || Number(amount) <= 0) { showToast('กรุณากรอกยอดเงินให้ถูกต้อง', true); return; }
+  if (!dateVal) { showToast('กรุณาลงวันที่', true); return; }
+
+  setBtnLoading('submitTransferBtn', true);
+  callApi('addTransfer', [fromFundId, toFundId, amount, isoToThaiDate(dateVal), notes, state.identity]).then(() => {
+    showToast('โอนเงินเรียบร้อย');
+    document.getElementById('transferAmount').value = '';
+    document.getElementById('transferNotes').value = '';
+    if (state.currentTab === 'overview') loadOverview();
+  }).catch(err => showToast(err.message, true))
+    .finally(() => setBtnLoading('submitTransferBtn', false));
+});
+
+/* ---------------- Manage funds tab ---------------- */
+document.getElementById('openAddFundBtn').addEventListener('click', () => {
+  document.getElementById('addFundForm').style.display = 'block';
+});
+document.getElementById('cancelAddFundBtn').addEventListener('click', () => {
+  document.getElementById('addFundForm').style.display = 'none';
+});
+document.getElementById('newFundGroupPills').addEventListener('click', e => {
+  const opt = e.target.closest('.pill-option');
+  if (!opt) return;
+  document.querySelectorAll('#newFundGroupPills .pill-option').forEach(p => p.classList.remove('selected'));
+  opt.classList.add('selected');
+  document.getElementById('newFundGroupPills').dataset.value = opt.dataset.group;
+});
+document.getElementById('saveNewFundBtn').addEventListener('click', () => {
+  if (!requireIdentityOrPrompt()) return;
+  const name = document.getElementById('newFundName').value.trim();
+  const group = document.getElementById('newFundGroupPills').dataset.value || '';
+  if (!name) { showToast('กรุณากรอกชื่อหมวดเงิน', true); return; }
+  if (!group) { showToast('กรุณาเลือกกลุ่ม', true); return; }
+  setBtnLoading('saveNewFundBtn', true);
+  callApi('addFund', [name, group, state.identity]).then(data => {
+    state.bootstrap = data;
+    showToast('เพิ่มหมวดเงินเรียบร้อย');
+    document.getElementById('newFundName').value = '';
+    document.querySelectorAll('#newFundGroupPills .pill-option').forEach(p => p.classList.remove('selected'));
+    document.getElementById('newFundGroupPills').dataset.value = '';
+    document.getElementById('addFundForm').style.display = 'none';
+    populateFundSelects();
+    renderManageFundsList();
+    if (state.currentTab === 'overview') loadOverview();
+  }).catch(err => showToast(err.message, true))
+    .finally(() => setBtnLoading('saveNewFundBtn', false));
+});
+
+function renderManageFundsList() {
+  const wrap = document.getElementById('manageFundsList');
+  const funds = (state.bootstrap && state.bootstrap.funds) || [];
+  if (!funds.length) { wrap.innerHTML = '<div class="empty-state">ยังไม่มีหมวดเงิน</div>'; return; }
+  wrap.innerHTML = funds.map(f => fundManageRowHtml(f)).join('');
+}
+
+function fundManageRowHtml(f) {
+  return `
+    <div class="tx-row" id="fundRow_${f.fundId}">
+      <div class="row-top">
+        <div style="flex:1;">
+          <div style="font-weight:700;">${escapeHtml(f.name)}</div>
+          <span class="badge ${f.groupTag === GROUP_MAIN ? 'badge-purple' : 'badge-gray'}">${f.groupTag === GROUP_MAIN ? 'รวมยอด (1-6)' : 'แยกต่างหาก (7-8)'}</span>
+          ${f.active ? '' : ' <span class="badge badge-gray">ปิดใช้งาน</span>'}
+        </div>
+      </div>
+      <div class="row-actions">
+        <button class="icon-btn" onclick="startEditFund('${f.fundId}')">แก้ไข</button>
+        <button class="icon-btn" onclick="openFund('${f.fundId}')">ดูรายการ</button>
+      </div>
+    </div>`;
+}
+
+function startEditFund(fundId) {
+  const f = (state.bootstrap.funds || []).find(x => x.fundId === fundId);
+  if (!f) return;
+  const row = document.getElementById('fundRow_' + fundId);
+  row.innerHTML = `
+    <label>ชื่อหมวดเงิน</label>
+    <input type="text" id="editFundName_${fundId}" value="${escapeHtml(f.name)}">
+    <label>กลุ่ม</label>
+    <select id="editFundGroup_${fundId}">
+      <option value="${GROUP_MAIN}" ${f.groupTag === GROUP_MAIN ? 'selected' : ''}>รวมยอด (1-6)</option>
+      <option value="${GROUP_SEPARATE}" ${f.groupTag === GROUP_SEPARATE ? 'selected' : ''}>แยกต่างหาก (7-8)</option>
+    </select>
+    <div class="switch-row">
+      <span style="font-size:13px;">ใช้งานอยู่ (Active)</span>
+      <label class="switch"><input type="checkbox" id="editFundActive_${fundId}" ${f.active ? 'checked' : ''}><span class="slider"></span></label>
+    </div>
+    <div class="btn-row" style="margin-top:12px;">
+      <button class="btn btn-outline" onclick="renderManageFundsList()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveEditFund('${fundId}')">บันทึก</button>
+    </div>`;
+}
+
+function saveEditFund(fundId) {
+  if (!requireIdentityOrPrompt()) return;
+  const name = document.getElementById('editFundName_' + fundId).value.trim();
+  const group = document.getElementById('editFundGroup_' + fundId).value;
+  const active = document.getElementById('editFundActive_' + fundId).checked;
+  if (!name) { showToast('กรุณากรอกชื่อหมวดเงิน', true); return; }
+  callApi('updateFund', [fundId, name, group, active, state.identity]).then(data => {
+    state.bootstrap = data;
+    showToast('แก้ไขหมวดเงินเรียบร้อย');
+    populateFundSelects();
+    renderManageFundsList();
+    if (state.currentTab === 'overview') loadOverview();
+  }).catch(err => showToast(err.message, true));
+}
+
+/* ---------------- Fund detail overlay ---------------- */
+function openFund(fundId) {
+  state.currentFundId = fundId;
+  document.getElementById('fundOverlay').classList.add('active');
+  loadFundDetail();
+}
+function closeOverlay() {
+  document.getElementById('fundOverlay').classList.remove('active');
+  state.currentFundId = null;
+  state.editingTxId = null;
+}
+document.getElementById('closeOverlayBtn').addEventListener('click', closeOverlay);
+
+function loadFundDetail() {
+  if (!state.currentFundId) return;
+  callApi('getFundDetail', [state.currentFundId]).then(data => {
+    state.currentFundDetail = data;
+    renderFundDetail();
+  }).catch(err => showToast(err.message, true));
+}
+
+function renderFundDetail() {
+  const d = state.currentFundDetail;
+  if (!d) return;
+  document.getElementById('overlayFundName').textContent = d.fund.name + (d.fund.active ? '' : ' (ปิดใช้งาน)');
+  document.getElementById('overlayFundBalance').textContent = money(d.balance);
+
+  const body = document.getElementById('overlayBody');
+  body.innerHTML = `<div class="card"><h3>ประวัติรายการ (${d.transactions.length})</h3><div id="txListWrap"></div></div>`;
+  renderTxList();
+}
+
+function renderTxList() {
+  const txs = state.currentFundDetail.transactions;
+  const wrap = document.getElementById('txListWrap');
+  if (!txs.length) { wrap.innerHTML = '<div class="empty-state">ยังไม่มีรายการ</div>'; return; }
+  wrap.innerHTML = txs.map(t => {
+    if (state.editingTxId === t.txId) return txEditFormHtml(t);
+    const isTransfer = !!t.transferGroupId;
+    return `
+    <div class="tx-row">
+      <div class="row-top">
+        <div>
+          <div style="font-weight:700;">${escapeHtml(t.txDate)} ${isTransfer ? '<span class="badge badge-purple">โอนเงิน</span>' : ''}</div>
+          ${t.notes ? `<div class="li-sub">${escapeHtml(t.notes)}</div>` : ''}
+          <div class="li-sub">บันทึกโดย ${escapeHtml(t.recordedBy)} • ${escapeHtml(t.recordedAt)}</div>
+        </div>
+        <div class="li-amount ${t.direction === 'IN' ? 'pos' : 'neg'}">${t.direction === 'IN' ? '+' : '-'}${money(t.amount)}</div>
+      </div>
+      <div class="row-actions">
+        ${isTransfer
+          ? `<button class="icon-btn danger" onclick="deleteTransferRow('${t.transferGroupId}')">ลบรายการโอน</button>`
+          : `<button class="icon-btn" onclick="startEditTx('${t.txId}')">แก้ไข</button><button class="icon-btn danger" onclick="deleteTxRow('${t.txId}')">ลบ</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function txEditFormHtml(t) {
+  return `
+    <div class="tx-row">
+      <label>ประเภทรายการ</label>
+      <div class="radio-pills">
+        <div class="pill-option in ${t.direction === 'IN' ? 'selected' : ''}" onclick="setEditTxDir('${t.txId}','IN',this)">รับเข้า (+)</div>
+        <div class="pill-option out ${t.direction === 'OUT' ? 'selected' : ''}" onclick="setEditTxDir('${t.txId}','OUT',this)">จ่ายออก (-)</div>
+      </div>
+      <input type="hidden" id="editTxDir_${t.txId}" value="${t.direction}">
+      <label>ยอดเงิน</label>
+      <input type="number" id="editTxAmount_${t.txId}" value="${t.amount}" min="0" step="0.01">
+      <label>วันที่</label>
+      <input type="date" id="editTxDate_${t.txId}" value="${thaiDateToIso(t.txDate)}">
+      <label>หมายเหตุ</label>
+      <textarea id="editTxNotes_${t.txId}">${escapeHtml(t.notes)}</textarea>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn btn-outline" onclick="cancelEditTx()">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="saveEditTx('${t.txId}')">บันทึก</button>
+      </div>
+    </div>`;
+}
+
+function thaiDateToIso(thaiDate) {
+  const parts = String(thaiDate || '').split('/');
+  if (parts.length !== 3) return '';
+  return parts[2] + '-' + parts[1] + '-' + parts[0];
+}
+
+function setEditTxDir(txId, dir, el) {
+  document.getElementById('editTxDir_' + txId).value = dir;
+  el.parentElement.querySelectorAll('.pill-option').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function startEditTx(txId) { state.editingTxId = txId; renderTxList(); }
+function cancelEditTx() { state.editingTxId = null; renderTxList(); }
+
+function saveEditTx(txId) {
+  if (!requireIdentityOrPrompt()) return;
+  const direction = document.getElementById('editTxDir_' + txId).value;
+  const amount = document.getElementById('editTxAmount_' + txId).value;
+  const dateVal = document.getElementById('editTxDate_' + txId).value;
+  const notes = document.getElementById('editTxNotes_' + txId).value.trim();
+  if (!amount || Number(amount) <= 0) { showToast('กรุณากรอกยอดเงินให้ถูกต้อง', true); return; }
+  if (!dateVal) { showToast('กรุณาลงวันที่', true); return; }
+  callApi('updateTransaction', [txId, direction, amount, isoToThaiDate(dateVal), notes, state.identity]).then(data => {
+    state.currentFundDetail = data;
+    state.editingTxId = null;
+    renderFundDetail();
+    showToast('แก้ไขรายการเรียบร้อย');
+    if (state.currentTab === 'overview') loadOverview();
+  }).catch(err => showToast(err.message, true));
+}
+
+function deleteTxRow(txId) {
+  if (!requireIdentityOrPrompt()) return;
+  if (!confirm('ยืนยันลบรายการนี้?')) return;
+  callApi('deleteTransaction', [txId, state.identity]).then(data => {
+    state.currentFundDetail = data;
+    renderFundDetail();
+    showToast('ลบรายการเรียบร้อย');
+    if (state.currentTab === 'overview') loadOverview();
+  }).catch(err => showToast(err.message, true));
+}
+
+function deleteTransferRow(transferGroupId) {
+  if (!requireIdentityOrPrompt()) return;
+  if (!confirm('ยืนยันลบรายการโอนนี้? จะลบทั้งสองด้าน (ต้นทางและปลายทาง) พร้อมกัน')) return;
+  callApi('deleteTransfer', [transferGroupId, state.identity]).then(() => {
+    loadFundDetail();
+    showToast('ลบรายการโอนเรียบร้อย');
+    if (state.currentTab === 'overview') loadOverview();
+  }).catch(err => showToast(err.message, true));
+}
+
+/* ---------------- Audit log ---------------- */
+function loadAuditLog() {
+  const actorName = document.getElementById('auditActorFilter').value;
+  const dateFromIso = document.getElementById('auditDateFrom').value;
+  const dateToIso = document.getElementById('auditDateTo').value;
+  const dateFrom = dateFromIso ? isoToThaiDate(dateFromIso) : '';
+  const dateTo = dateToIso ? isoToThaiDate(dateToIso) : '';
+  callApi('getAuditLog', [{ actorName, dateFrom, dateTo }]).then(rows => renderAuditLog(rows))
+    .catch(err => showToast(err.message, true));
+}
+document.getElementById('applyAuditFilterBtn').addEventListener('click', loadAuditLog);
+
+function renderAuditLog(rows) {
+  const wrap = document.getElementById('auditList');
+  if (!rows.length) { wrap.innerHTML = '<div class="empty-state">ไม่พบประวัติ</div>'; return; }
+  wrap.innerHTML = rows.map(r => `
+    <div class="tx-row">
+      <div style="display:flex;justify-content:space-between;">
+        <b>${escapeHtml(r.actionType)}</b>
+        <span class="muted" style="font-size:12px;">${escapeHtml(r.timestamp)}</span>
+      </div>
+      <div class="li-sub" style="margin-top:4px;">${escapeHtml(r.detail)}</div>
+      <div class="li-sub">โดย ${escapeHtml(r.actorName)}</div>
+    </div>`).join('');
+}
+
+/* ---------------- Misc ---------------- */
+function setBtnLoading(id, loading) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.disabled = loading;
+  if (!btn.dataset.origText) btn.dataset.origText = btn.textContent;
+  btn.textContent = loading ? 'กำลังบันทึก...' : btn.dataset.origText;
+}
+
+document.getElementById('refreshBtn').addEventListener('click', () => {
+  const icon = document.getElementById('refreshIcon');
+  icon.classList.add('spin');
+  loadBootstrap().then(() => { populateFundSelects(); if (state.currentTab === 'manageFunds') renderManageFundsList(); });
+  loadOverview();
+  if (state.currentTab === 'audit') loadAuditLog();
+  if (state.currentFundId) loadFundDetail();
+  setTimeout(() => icon.classList.remove('spin'), 700);
+});
+
+/* ---------------- Bootstrap / init ---------------- */
+function loadBootstrap() {
+  return callApi('bootstrap', []).then(data => {
+    state.bootstrap = data;
+    document.getElementById('shopNameLabel').textContent = data.shopName;
+    populateFundSelects();
+    return data;
+  }).catch(err => showToast('เชื่อมต่อ API ไม่สำเร็จ: ' + err.message, true));
+}
+
+function startPolling() {
+  if (state.pollTimer) clearInterval(state.pollTimer);
+  state.pollTimer = setInterval(() => {
+    if (document.visibilityState !== 'visible') return;
+    if (state.currentFundId) { loadFundDetail(); return; }
+    if (state.currentTab === 'overview') loadOverview();
+    else if (state.currentTab === 'audit') loadAuditLog();
+  }, POLL_INTERVAL_MS);
+}
+
+function init() {
+  if (!API_URL || API_URL.indexOf('PASTE_YOUR') === 0) {
+    showToast('ยังไม่ได้ตั้งค่า API_URL ในไฟล์นี้ — ดูขั้นตอนการติดตั้งประกอบ', true);
+  }
+  ensureIdentity();
+  loadBootstrap().then(() => { ensureIdentity(); renderManageFundsList(); });
+  loadOverview();
+  const today = new Date();
+  const iso = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+  document.getElementById('txDate').value = iso;
+  document.getElementById('transferDate').value = iso;
+  startPolling();
+}
+
+init();
+</script>
+</body>
+</html>
