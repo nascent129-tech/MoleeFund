@@ -152,6 +152,17 @@
   .switch input:checked + .slider:before{transform:translateX(18px);}
   .section-divider{font-size:12.5px;font-weight:700;color:var(--muted);margin:14px 0 4px;text-transform:uppercase;letter-spacing:.3px;}
   .arrow-sep{text-align:center;color:var(--primary);font-size:20px;margin:2px 0;}
+  .fund-check-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 4px;border-bottom:1px solid var(--border);}
+  .fund-check-item:last-child{border-bottom:none;}
+  .fund-check-item input[type=checkbox]{width:20px;height:20px;flex:none;}
+  .fund-check-item label{margin:0;flex:1;color:var(--text);font-weight:600;font-size:13.5px;cursor:pointer;}
+  .fund-check-amt{font-size:13px;font-weight:700;color:var(--muted);}
+  .warn-box{background:var(--warning-light);color:#8a4a00;border:1px solid #ffdca8;border-radius:12px;padding:10px 12px;font-size:12.5px;margin-top:10px;}
+  .modal-scroll{max-height:60vh;overflow-y:auto;margin-top:8px;}
+  .period-card{border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fbf9ff;}
+  .period-card .ph-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+  .period-card .ph-body{display:none;margin-top:8px;}
+  .period-card.expanded .ph-body{display:block;}
 </style>
 </head>
 <body>
@@ -187,6 +198,11 @@
       <div class="card">
         <h3>รายการล่าสุด</h3>
         <div id="recentList"><div class="empty-state">ยังไม่มีรายการ</div></div>
+      </div>
+      <div class="card">
+        <h3>ปิดงวด</h3>
+        <div class="li-sub" id="lastClosedPeriodLabel">ยังไม่เคยปิดงวด</div>
+        <button class="btn btn-outline" id="openClosePeriodBtn">ปิดงวดตอนนี้</button>
       </div>
     </section>
 
@@ -267,6 +283,10 @@
         <button class="btn btn-outline btn-sm" id="applyAuditFilterBtn" style="width:auto;padding:8px 12px;margin-top:0;">กรอง</button>
         <div id="auditList" style="margin-top:12px;"><div class="empty-state">กำลังโหลดข้อมูล...</div></div>
       </div>
+      <div class="card">
+        <h3>ประวัติการปิดงวด</h3>
+        <div id="periodHistoryList"><div class="empty-state">ยังไม่เคยปิดงวด</div></div>
+      </div>
     </section>
 
   </main>
@@ -296,6 +316,23 @@
       <p>เลือกตัวตนของคุณ ระบบจะจำไว้ในเครื่องนี้ และแนบชื่อคุณไปกับทุกรายการที่บันทึกโดยอัตโนมัติ</p>
       <div class="radio-pills" id="identityPills"></div>
       <button class="btn btn-primary" id="confirmIdentityBtn" disabled>ยืนยัน</button>
+    </div>
+  </div>
+
+  <!-- Close period modal -->
+  <div class="modal-backdrop hidden" id="closePeriodModal">
+    <div class="modal-sheet">
+      <h2>ปิดงวด</h2>
+      <p>บันทึกยอดคงเหลือปัจจุบันของหมวดที่เลือกไว้เป็นประวัติ แล้วเคลียร์ยอดของหมวดนั้นเป็น 0 เพื่อเริ่มงวดใหม่ (ไม่ลบประวัติรายการเก่า)</p>
+      <label>ชื่อ/ช่วงวันที่ของงวด *</label>
+      <input type="text" id="closePeriodLabel" placeholder="เช่น 17/09/2569 - 01/10/2569">
+      <label>เลือกหมวดเงินที่จะปิดงวด</label>
+      <div class="modal-scroll" id="closePeriodFundList"></div>
+      <div class="warn-box">คำเตือน: การปิดงวดจะเคลียร์ยอดหมวดที่เลือกเป็น 0 ทันที และย้อนกลับไม่ได้ (ถ้าพลาดต้องลบรายการ "ปิดงวด" ที่เกิดขึ้นออกเองทีหลัง)</div>
+      <div class="btn-row" style="margin-top:14px;">
+        <button class="btn btn-outline" id="cancelClosePeriodBtn">ยกเลิก</button>
+        <button class="btn btn-primary" id="confirmClosePeriodBtn">ยืนยันปิดงวด</button>
+      </div>
     </div>
   </div>
 
@@ -412,7 +449,7 @@ document.querySelectorAll('nav.bottomnav .nav-item').forEach(item => {
 function refreshActiveView() {
   if (state.currentTab === 'overview') loadOverview();
   else if (state.currentTab === 'manageFunds') renderManageFundsList();
-  else if (state.currentTab === 'audit') loadAuditLog();
+  else if (state.currentTab === 'audit') { loadAuditLog(); loadPeriodHistory(); }
 }
 
 /* ---------------- Overview ---------------- */
@@ -429,6 +466,13 @@ function renderOverview() {
   document.getElementById('mainTotal').textContent = money(o.mainTotal);
   document.getElementById('separateTotal').textContent = money(o.separateTotal);
 
+  const lastClosedEl = document.getElementById('lastClosedPeriodLabel');
+  if (o.lastClosedPeriod) {
+    lastClosedEl.textContent = 'ปิดงวดล่าสุด: "' + o.lastClosedPeriod.periodLabel + '" เมื่อ ' + o.lastClosedPeriod.closedAt + ' โดย ' + o.lastClosedPeriod.closedBy;
+  } else {
+    lastClosedEl.textContent = 'ยังไม่เคยปิดงวด';
+  }
+
   const mainFunds = o.funds.filter(f => f.groupTag === GROUP_MAIN);
   const sepFunds = o.funds.filter(f => f.groupTag === GROUP_SEPARATE);
 
@@ -443,7 +487,7 @@ function renderOverview() {
       <div class="tx-row">
         <div class="row-top">
           <div>
-            <div style="font-weight:700;">${escapeHtml(t.fundName)} ${t.isTransfer ? '<span class="badge badge-purple">โอนเงิน</span>' : ''}</div>
+            <div style="font-weight:700;">${escapeHtml(t.fundName)} ${t.isTransfer ? '<span class="badge badge-purple">โอนเงิน</span>' : ''} ${t.isPeriodClose ? '<span class="badge badge-gray">ปิดงวด</span>' : ''}</div>
             <div class="li-sub">${escapeHtml(t.txDate)} • บันทึกโดย ${escapeHtml(t.recordedBy)}</div>
             ${t.notes ? `<div class="li-sub">${escapeHtml(t.notes)}</div>` : ''}
           </div>
@@ -683,21 +727,26 @@ function renderTxList() {
   wrap.innerHTML = txs.map(t => {
     if (state.editingTxId === t.txId) return txEditFormHtml(t);
     const isTransfer = !!t.transferGroupId;
+    const isPeriodClose = !!t.periodCloseId;
+    let actionsHtml;
+    if (isTransfer) {
+      actionsHtml = `<button class="icon-btn danger" onclick="deleteTransferRow('${t.transferGroupId}')">ลบรายการโอน</button>`;
+    } else if (isPeriodClose) {
+      actionsHtml = `<button class="icon-btn danger" onclick="deleteTxRow('${t.txId}')">ลบ (ยกเลิกการปิดงวดของหมวดนี้)</button>`;
+    } else {
+      actionsHtml = `<button class="icon-btn" onclick="startEditTx('${t.txId}')">แก้ไข</button><button class="icon-btn danger" onclick="deleteTxRow('${t.txId}')">ลบ</button>`;
+    }
     return `
     <div class="tx-row">
       <div class="row-top">
         <div>
-          <div style="font-weight:700;">${escapeHtml(t.txDate)} ${isTransfer ? '<span class="badge badge-purple">โอนเงิน</span>' : ''}</div>
+          <div style="font-weight:700;">${escapeHtml(t.txDate)} ${isTransfer ? '<span class="badge badge-purple">โอนเงิน</span>' : ''} ${isPeriodClose ? '<span class="badge badge-gray">ปิดงวด</span>' : ''}</div>
           ${t.notes ? `<div class="li-sub">${escapeHtml(t.notes)}</div>` : ''}
           <div class="li-sub">บันทึกโดย ${escapeHtml(t.recordedBy)} • ${escapeHtml(t.recordedAt)}</div>
         </div>
         <div class="li-amount ${t.direction === 'IN' ? 'pos' : 'neg'}">${t.direction === 'IN' ? '+' : '-'}${money(t.amount)}</div>
       </div>
-      <div class="row-actions">
-        ${isTransfer
-          ? `<button class="icon-btn danger" onclick="deleteTransferRow('${t.transferGroupId}')">ลบรายการโอน</button>`
-          : `<button class="icon-btn" onclick="startEditTx('${t.txId}')">แก้ไข</button><button class="icon-btn danger" onclick="deleteTxRow('${t.txId}')">ลบ</button>`}
-      </div>
+      <div class="row-actions">${actionsHtml}</div>
     </div>`;
   }).join('');
 }
@@ -777,6 +826,82 @@ function deleteTransferRow(transferGroupId) {
   }).catch(err => showToast(err.message, true));
 }
 
+/* ---------------- Close period ---------------- */
+document.getElementById('openClosePeriodBtn').addEventListener('click', openClosePeriodModal);
+document.getElementById('cancelClosePeriodBtn').addEventListener('click', () => {
+  document.getElementById('closePeriodModal').classList.add('hidden');
+});
+
+function openClosePeriodModal() {
+  if (!requireIdentityOrPrompt()) return;
+  const funds = (state.overview && state.overview.funds) || [];
+  const wrap = document.getElementById('closePeriodFundList');
+  if (!funds.length) {
+    wrap.innerHTML = '<div class="empty-state">ยังไม่มีหมวดเงิน</div>';
+  } else {
+    wrap.innerHTML = funds.map(f => `
+      <div class="fund-check-item">
+        <input type="checkbox" id="closeFundChk_${f.fundId}" checked>
+        <label for="closeFundChk_${f.fundId}">${escapeHtml(f.name)} ${f.groupTag === 'separate' ? '(แยกต่างหาก)' : ''}</label>
+        <span class="fund-check-amt">${money(f.balance)}</span>
+      </div>`).join('');
+  }
+  document.getElementById('closePeriodLabel').value = '';
+  document.getElementById('closePeriodModal').classList.remove('hidden');
+}
+
+document.getElementById('confirmClosePeriodBtn').addEventListener('click', () => {
+  if (!requireIdentityOrPrompt()) return;
+  const periodLabel = document.getElementById('closePeriodLabel').value.trim();
+  if (!periodLabel) { showToast('กรุณาระบุชื่อ/ช่วงวันที่ของงวด', true); return; }
+  const funds = (state.overview && state.overview.funds) || [];
+  const fundIds = funds.filter(f => {
+    const chk = document.getElementById('closeFundChk_' + f.fundId);
+    return chk && chk.checked;
+  }).map(f => f.fundId);
+  if (!fundIds.length) { showToast('กรุณาเลือกอย่างน้อย 1 หมวดเงิน', true); return; }
+  if (!confirm('ยืนยันปิดงวด "' + periodLabel + '" สำหรับ ' + fundIds.length + ' หมวด? ยอดจะถูกเคลียร์เป็น 0 ทันที')) return;
+
+  setBtnLoading('confirmClosePeriodBtn', true);
+  callApi('closePeriod', [periodLabel, fundIds, state.identity]).then(data => {
+    state.overview = data;
+    renderOverview();
+    document.getElementById('closePeriodModal').classList.add('hidden');
+    showToast('ปิดงวดเรียบร้อย');
+  }).catch(err => showToast(err.message, true))
+    .finally(() => setBtnLoading('confirmClosePeriodBtn', false));
+});
+
+function loadPeriodHistory() {
+  callApi('getPeriodHistory', []).then(rows => renderPeriodHistory(rows))
+    .catch(err => showToast(err.message, true));
+}
+
+function renderPeriodHistory(rows) {
+  const wrap = document.getElementById('periodHistoryList');
+  if (!rows.length) { wrap.innerHTML = '<div class="empty-state">ยังไม่เคยปิดงวด</div>'; return; }
+  wrap.innerHTML = rows.map((p, idx) => `
+    <div class="period-card" id="periodCard_${idx}">
+      <div class="ph-header" onclick="document.getElementById('periodCard_${idx}').classList.toggle('expanded')">
+        <div>
+          <div style="font-weight:700;">${escapeHtml(p.periodLabel)}</div>
+          <div class="li-sub">ปิดเมื่อ ${escapeHtml(p.closedAt)} โดย ${escapeHtml(p.closedBy)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="li-amount">${money(p.mainTotal)}</div>
+          <div class="li-sub">แยกต่างหาก ${money(p.separateTotal)}</div>
+        </div>
+      </div>
+      <div class="ph-body">
+        ${p.funds.map(f => `
+          <div class="period-summary-item" style="display:flex;justify-content:space-between;padding:6px 2px;border-bottom:1px dashed var(--border);font-size:13px;">
+            <span>${escapeHtml(f.fundName)} ${f.groupTag === 'separate' ? '<span class="badge badge-gray">แยกต่างหาก</span>' : ''}</span>
+            <b>${money(f.closingBalance)}</b>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
 /* ---------------- Audit log ---------------- */
 function loadAuditLog() {
   const actorName = document.getElementById('auditActorFilter').value;
@@ -817,7 +942,7 @@ document.getElementById('refreshBtn').addEventListener('click', () => {
   icon.classList.add('spin');
   loadBootstrap().then(() => { populateFundSelects(); if (state.currentTab === 'manageFunds') renderManageFundsList(); });
   loadOverview();
-  if (state.currentTab === 'audit') loadAuditLog();
+  if (state.currentTab === 'audit') { loadAuditLog(); loadPeriodHistory(); }
   if (state.currentFundId) loadFundDetail();
   setTimeout(() => icon.classList.remove('spin'), 700);
 });
@@ -838,7 +963,7 @@ function startPolling() {
     if (document.visibilityState !== 'visible') return;
     if (state.currentFundId) { loadFundDetail(); return; }
     if (state.currentTab === 'overview') loadOverview();
-    else if (state.currentTab === 'audit') loadAuditLog();
+    else if (state.currentTab === 'audit') { loadAuditLog(); loadPeriodHistory(); }
   }, POLL_INTERVAL_MS);
 }
 
